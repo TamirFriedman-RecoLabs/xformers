@@ -606,12 +606,8 @@ class BlockDiagonalMask(AttentionBias):
 @dataclass
 class BlockDiagonalCausalMask(BlockDiagonalMask):
     """
-    Same as :attr:`xformers.ops.fmha.attn_bias.BlockDiagonalMask`, except that each block is causal.
-
-    Queries and Keys are each divided into the same number of blocks.
-    A query Q in block i cannot attend to a key which is not in block i,
-    nor one which is farther from the initial key in block i than Q
-    is from the initial query in block i.
+    Modification of `BlockDiagonalMask` where blocks are inner-connected
+    except for the diagonal elements, which are masked from themselves.
     """
 
     def _create_block_mask(
@@ -620,11 +616,8 @@ class BlockDiagonalCausalMask(BlockDiagonalMask):
         dtype: torch.dtype = torch.float32,
         device: Union[str, torch.device] = "cpu",
     ) -> torch.Tensor:
-        return LowerTriangularMask().materialize(
-            shape,
-            dtype=dtype,
-            device=device,
-        )
+        # Create a matrix filled with `-inf` on the diagonal and `0` elsewhere
+        return torch.zeros(shape, dtype=dtype, device=device).fill_diagonal_(-torch.inf)
 
 
 @dataclass
